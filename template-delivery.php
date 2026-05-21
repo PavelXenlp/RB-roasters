@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/delivery.php';
+rb_load_page_part('delivery');
 get_footer();

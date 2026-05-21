@@ -54,6 +54,17 @@ function rb_menu(): array
     return is_array($menu ?? null) ? $menu : [];
 }
 
+function rb_load_page_part(string $name): void
+{
+    global $heroCards, $news, $brewMethods, $products, $categories, $contacts, $courses;
+
+    $file = get_template_directory() . '/pages/' . sanitize_file_name($name) . '.php';
+
+    if (file_exists($file)) {
+        require $file;
+    }
+}
+
 add_action('init', 'rb_register_content_types');
 function rb_register_content_types(): void
 {

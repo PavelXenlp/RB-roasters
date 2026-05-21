@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/business.php';
+rb_load_page_part('business');
 get_footer();

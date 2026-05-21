@@ -7,6 +7,8 @@
 
 get_header();
 
+global $categories, $products;
+
 $terms = get_terms([
     'taxonomy' => 'rb_product_category',
     'hide_empty' => false,

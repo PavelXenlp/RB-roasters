@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/product.php';
+rb_load_page_part('product');
 get_footer();

@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/news.php';
+rb_load_page_part('news');
 get_footer();

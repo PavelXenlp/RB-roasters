@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/home.php';
+rb_load_page_part('home');
 get_footer();

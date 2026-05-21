@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/loyalty.php';
+rb_load_page_part('loyalty');
 get_footer();

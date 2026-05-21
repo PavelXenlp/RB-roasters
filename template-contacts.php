@@ -6,5 +6,5 @@
  */
 
 get_header();
-require __DIR__ . '/pages/contacts.php';
+rb_load_page_part('contacts');
 get_footer();
