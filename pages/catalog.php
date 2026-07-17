@@ -1,7 +1,7 @@
 <section class="page-head">
         <span>Розничный магазин</span>
         <h1>Каталог кофе для дома</h1>
-        <p>Лаконичная витрина с плотной сеткой карточек. В WordPress это место логично подключать к WooCommerce и 1С.</p>
+        <p>Выбирайте кофе для дома, офиса и любимого способа приготовления.</p>
     </section>
     <section class="section section--tight">
         <div class="category-row">

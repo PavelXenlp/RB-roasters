@@ -58,6 +58,71 @@ function rb_product_card_from_post(int $post_id): void
     <?php
 }
 
+function rb_article_card_from_post(int $post_id): void
+{
+    $image = get_the_post_thumbnail_url($post_id, 'medium_large') ?: rb_asset_url('img/IMG_1159_1.jpg');
+    ?>
+    <article class="news-card">
+        <a href="<?= esc_url(get_permalink($post_id)) ?>">
+            <img src="<?= esc_url($image) ?>" alt="<?= esc_attr(get_the_title($post_id)) ?>">
+        </a>
+        <div>
+            <span><?= esc_html(get_the_date('j F', $post_id)) ?></span>
+            <h3><a href="<?= esc_url(get_permalink($post_id)) ?>"><?= esc_html(get_the_title($post_id)) ?></a></h3>
+            <p><?= esc_html(get_the_excerpt($post_id)) ?></p>
+        </div>
+    </article>
+    <?php
+}
+
+function rb_training_card_from_post(int $post_id): void
+{
+    $image = get_the_post_thumbnail_url($post_id, 'medium_large') ?: rb_asset_url('img/IMG_1352_1.jpg');
+    $duration = get_post_meta($post_id, 'rb_training_duration', true);
+    $price = get_post_meta($post_id, 'rb_training_price', true);
+    $points = array_filter(array_map('trim', explode("\n", (string) get_post_meta($post_id, 'rb_training_points', true))));
+    $link = get_post_meta($post_id, 'rb_training_link', true) ?: (rb_contacts()['trainer'] ?? '#');
+    ?>
+    <article class="course-card">
+        <img src="<?= esc_url($image) ?>" alt="<?= esc_attr(get_the_title($post_id)) ?>">
+        <div>
+            <h3><?= esc_html(get_the_title($post_id)) ?></h3>
+            <?php if ($duration || $price): ?>
+                <p><b><?= esc_html($duration) ?></b><?php if ($duration && $price): ?><br><?php endif; ?><?= esc_html($price) ?></p>
+            <?php endif; ?>
+            <?php if ($points): ?>
+                <ul><?php foreach ($points as $item): ?><li><?= esc_html($item) ?></li><?php endforeach; ?></ul>
+            <?php else: ?>
+                <p><?= esc_html(get_the_excerpt($post_id)) ?></p>
+            <?php endif; ?>
+            <a class="button button--small" href="<?= esc_url($link) ?>">Узнать подробности</a>
+        </div>
+    </article>
+    <?php
+}
+
+function rb_custom_select(string $name, array $options, ?string $selected = null, string $label = ''): void
+{
+    $selected = $selected ?? (string) array_key_first($options);
+    $selected_label = $options[$selected] ?? reset($options);
+    ?>
+    <div class="custom-select" data-custom-select>
+        <input type="hidden" name="<?= esc_attr($name) ?>" value="<?= esc_attr($selected) ?>" data-custom-select-input>
+        <button class="custom-select__button" type="button" aria-haspopup="listbox" aria-expanded="false" data-custom-select-button>
+            <span><?= esc_html($selected_label) ?></span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <div class="custom-select__dropdown" role="listbox" aria-label="<?= esc_attr($label ?: $name) ?>" data-custom-select-dropdown>
+            <?php foreach ($options as $value => $option_label): ?>
+                <button class="custom-select__option<?= (string) $value === (string) $selected ? ' is-selected' : '' ?>" type="button" role="option" aria-selected="<?= (string) $value === (string) $selected ? 'true' : 'false' ?>" data-value="<?= esc_attr($value) ?>">
+                    <?= esc_html($option_label) ?>
+                </button>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php
+}
+
 function first_letter(string $text): string
 {
     if (preg_match('/^./u', $text, $match)) {

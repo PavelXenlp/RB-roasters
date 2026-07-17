@@ -48,7 +48,7 @@ get_header();
                     <input type="hidden" name="rb_action" value="profile">
                     <?php wp_nonce_field('rb_profile', 'rb_profile_nonce'); ?>
                     <input name="full_name" value="<?= esc_attr($user->display_name) ?>" placeholder="ФИО">
-                    <input name="phone" value="<?= esc_attr(get_user_meta($user->ID, 'rb_phone', true)) ?>" placeholder="Телефон">
+                    <input name="phone" type="tel" inputmode="tel" value="<?= esc_attr(rb_format_phone((string) get_user_meta($user->ID, 'rb_phone', true))) ?>" placeholder="+7 (___) ___-__-__">
                     <input name="email" value="<?= esc_attr($user->user_email) ?>" placeholder="Почта">
                     <button class="button button--small" type="submit">Сохранить</button>
                 </form>
@@ -77,7 +77,7 @@ get_header();
                     <input type="hidden" name="rb_action" value="register">
                     <?php wp_nonce_field('rb_register', 'rb_register_nonce'); ?>
                     <input name="full_name" placeholder="ФИО" required>
-                    <input name="phone" placeholder="Телефон" required>
+                    <input name="phone" type="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required>
                     <input type="email" name="email" placeholder="Почта" required>
                     <input type="password" name="password" placeholder="Пароль" required>
                     <button class="button button--small" type="submit">Зарегистрироваться</button>

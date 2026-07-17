@@ -1,15 +1,21 @@
 <section class="cart-page">
-        <div class="empty-cart">
-            <h1>Корзина пуста :(</h1>
-            <p>Выбирайте любимые лоты кофе в зернах или аксессуары для приготовления.</p>
-            <a class="button" href="<?= route_url('catalog') ?>">В каталог</a>
-        </div>
-        <form class="checkout-panel">
-            <h2>Оформление заказа</h2>
-            <label>Способ доставки<select><option>СДЭК за счет получателя</option><option>Самовывоз из кофейни</option><option>Самовывоз с производства (-5%)</option></select></label>
-            <label>ФИО<input type="text" placeholder="Иван Иванов"></label>
-            <label>Телефон<input type="tel" placeholder="+7"></label>
-            <label>Почта<input type="email" placeholder="mail@example.com"></label>
-            <label>Промокод<input type="text"></label>
-        </form>
-    </section>
+    <div class="empty-cart">
+        <h1>Корзина пуста :(</h1>
+        <p>Выбирайте любимые лоты кофе в зернах или аксессуары для приготовления.</p>
+        <a class="button" href="<?= route_url('catalog') ?>">В каталог</a>
+    </div>
+    <form class="checkout-panel">
+        <h2>Оформление заказа</h2>
+        <label>Способ доставки
+            <?php rb_custom_select('delivery', [
+                'СДЭК за счет получателя' => 'СДЭК за счет получателя',
+                'Самовывоз из кофейни' => 'Самовывоз из кофейни',
+                'Самовывоз с производства (-5%)' => 'Самовывоз с производства (-5%)',
+            ], 'СДЭК за счет получателя', 'Способ доставки'); ?>
+        </label>
+        <label>ФИО<input type="text" placeholder="Иван Иванов"></label>
+        <label>Телефон<input type="tel" inputmode="tel" placeholder="+7 (___) ___-__-__"></label>
+        <label>Почта<input type="email" placeholder="mail@example.com"></label>
+        <label>Промокод<input type="text"></label>
+    </form>
+</section>

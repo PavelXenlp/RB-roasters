@@ -9,7 +9,7 @@
                 <a href="<?= route_url('business') ?>">Кофе для бизнеса</a>
                 <a href="<?= route_url('contacts') ?>">Контакты</a>
             </nav>
-            <a class="footer-phone" href="tel:<?= $contacts['phone_href'] ?>"><?= $contacts['phone'] ?></a>
+            <a class="footer-phone" href="tel:<?= esc_attr(rb_phone_href($contacts['phone'] ?? '')) ?>"><?= esc_html(rb_format_phone($contacts['phone'] ?? '')) ?></a>
             <div class="footer-socials">
                 <a href="<?= esc_url($contacts['vk']) ?>" aria-label="ВКонтакте"><img src="<?= esc_url(rb_asset_url('img/vk_footer.svg')) ?>" alt=""></a>
                 <a href="<?= esc_url($contacts['tg']) ?>" aria-label="Telegram"><img src="<?= esc_url(rb_asset_url('img/tg_footer.svg')) ?>" alt=""></a>

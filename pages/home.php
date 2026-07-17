@@ -15,7 +15,7 @@
             <p>Кофе - это не только тонизирующий эффект, а прежде всего философия и богатство вкуса. Откроем для вас многогранность мира кофе: горький, шоколадный, ореховый, сладкий.</p>
             <p>Мы знаем, как бережно раскрыть потенциал зерна. Наша миссия - донести до каждого любителя кофе вкус хорошего качества без переплаты за бренд и без стереотипов.</p>
         </div>
-        <img class="about-photo" src="/assets/img/IMG_1159_1.jpg" alt="Обжарка кофе на производстве">
+        <img class="about-photo" src="/wp-content/themes/theme/assets/img/IMG_1159_1.jpg" alt="Обжарка кофе на производстве">
     </section>
 
     <section class="beans-band">
@@ -33,10 +33,10 @@
 
     <section class="section split-section">
         <div class="photo-collage">
-            <img src="/assets/img/IMG_0972_1.jpg" alt="">
-            <img src="/assets/img/IMG_1192_1.jpg" alt="">
-            <img src="/assets/img/IMG_1352_1.jpg" alt="">
-            <img src="/assets/img/IMG_1561_1.jpg" alt="">
+            <img src="/wp-content/themes/theme/assets/img/IMG_0972_1.jpg" alt="">
+            <img src="/wp-content/themes/theme/assets/img/IMG_1192_1.jpg" alt="">
+            <img src="/wp-content/themes/theme/assets/img/IMG_1352_1.jpg" alt="">
+            <img src="/wp-content/themes/theme/assets/img/IMG_1561_1.jpg" alt="">
         </div>
         <div class="copy-block">
             <span class="eyebrow">Производство</span>
@@ -48,23 +48,36 @@
     </section>
 
     <section class="section" id="news">
-        <?php section_title('Новости и акции', 'Свежие события RB Roasters', 'На экране сразу несколько новостей, каждую можно раскрыть отдельной страницей при переносе в WordPress.'); ?>
+        <?php section_title('Новости и акции', 'Свежие события RB Roasters'); ?>
         <div class="news-grid">
-            <?php foreach ($news as $item): ?>
-                <article class="news-card">
-                    <img src="<?= $item['image'] ?>" alt="">
-                    <div>
-                        <span><?= htmlspecialchars($item['date']) ?></span>
-                        <h3><?= htmlspecialchars($item['title']) ?></h3>
-                        <p><?= htmlspecialchars($item['text']) ?></p>
-                    </div>
-                </article>
-            <?php endforeach; ?>
+            <?php
+            $articles_query = new WP_Query([
+                'post_type' => 'rb_article',
+                'post_status' => 'publish',
+                'posts_per_page' => 5,
+            ]);
+            ?>
+            <?php if ($articles_query->have_posts()): ?>
+                <?php while ($articles_query->have_posts()): $articles_query->the_post(); ?>
+                    <?php rb_article_card_from_post(get_the_ID()); ?>
+                <?php endwhile; wp_reset_postdata(); ?>
+            <?php else: ?>
+                <?php foreach ($news as $item): ?>
+                    <article class="news-card">
+                        <img src="<?= $item['image'] ?>" alt="">
+                        <div>
+                            <span><?= htmlspecialchars($item['date']) ?></span>
+                            <h3><?= htmlspecialchars($item['title']) ?></h3>
+                            <p><?= htmlspecialchars($item['text']) ?></p>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </div>
     </section>
 
     <section class="section brew-section">
-        <?php section_title('Способы приготовления', 'Выберите свой рецепт', 'Пока это заготовки страниц: позже добавим тексты, картинки и рекомендации из каталога.'); ?>
+        <?php section_title('Способы приготовления', 'Выберите свой рецепт', 'Подберите удобный способ заваривания и кофе под него.'); ?>
         <div class="brew-grid">
             <?php foreach ($brewMethods as $method): ?>
                 <a href="<?= route_url('catalog') ?>" class="brew-item">

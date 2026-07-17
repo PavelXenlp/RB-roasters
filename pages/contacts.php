@@ -3,7 +3,7 @@
             <span class="eyebrow">Контакты</span>
             <h1>Roastberry Coffee Roasters</h1>
             <p><?= $contacts['address'] ?></p>
-            <a href="tel:<?= $contacts['phone_href'] ?>" class="big-phone"><?= $contacts['phone'] ?></a>
+            <a href="tel:<?= esc_attr(rb_phone_href($contacts['phone'] ?? '')) ?>" class="big-phone"><?= esc_html(rb_format_phone($contacts['phone'] ?? '')) ?></a>
             <div class="contact-actions">
                 <a class="button" href="<?= $contacts['tg'] ?>">Telegram</a>
                 <a class="button button--outline" href="<?= $contacts['vk'] ?>">ВКонтакте</a>

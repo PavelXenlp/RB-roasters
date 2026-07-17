@@ -47,7 +47,7 @@ $contacts = [
     'map' => 'https://yandex.ru/maps/-/CPecyDp5',
 ];
 
-$menu = [
+$rb_menu_items = [
     ['Главная', route_url('home')],
     ['О нас', route_url('home', '#about')],
     ['Каталог', route_url('catalog')],
