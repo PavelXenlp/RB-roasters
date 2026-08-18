@@ -1,6 +1,7 @@
 <?php
 $contacts = function_exists('rb_contacts') ? rb_contacts() : ($contacts ?? []);
 $rb_header_menu_items = function_exists('rb_menu') ? rb_menu() : [];
+$rb_header_cart = function_exists('rb_cart_widget_data') ? rb_cart_widget_data() : ['count' => 0, 'total_formatted' => '0 ₽', 'items' => []];
 ?>
 <!doctype html>
 <html lang="ru">
@@ -24,6 +25,7 @@ $rb_header_menu_items = function_exists('rb_menu') ? rb_menu() : [];
         }());
     </script>
     <?php wp_head(); ?>
+    <link rel="icon" href="<?= esc_url(rb_asset_url('favicon.svg')) ?>" type="image/svg+xml">
 </head>
 <body>
 <div class="page-preloader" data-preloader aria-hidden="true">
@@ -39,25 +41,46 @@ $rb_header_menu_items = function_exists('rb_menu') ? rb_menu() : [];
 <header class="site-header">
     <a class="brand" href="<?= esc_url(route_url('home')) ?>" aria-label="Roastberry Coffee Roasters">
         <img src="<?= esc_url(rb_asset_url('img/logo.svg')) ?>" alt="" class="brand__logo">
+        <img src="<?= esc_url(rb_asset_url('IMG_9260.JPG')) ?>" alt="Обжарщик года — ТОП-10 компаний 2026" class="brand__award" decoding="async">
         <span class="brand__name">Roastberry Coffee Roasters</span>
     </a>
     <div class="header-meta">
-        <a class="social social--vk" href="<?= esc_url($contacts['vk'] ?? '#') ?>" aria-label="ВКонтакте">
+        <a class="social social--vk" href="<?= esc_url($contacts['vk'] ?? '#') ?>" target="_blank" rel="noopener noreferrer" aria-label="ВКонтакте">
             <img src="<?= esc_url(rb_asset_url('img/vk.svg')) ?>" alt="">
         </a>
-        <a class="social social--tg" href="<?= esc_url($contacts['tg'] ?? '#') ?>" aria-label="Telegram">
+        <a class="social social--tg" href="<?= esc_url($contacts['tg'] ?? '#') ?>" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
             <img src="<?= esc_url(rb_asset_url('img/tg.svg')) ?>" alt="">
         </a>
         <a class="phone" href="tel:<?= esc_attr(rb_phone_href($contacts['phone'] ?? '')) ?>"><?= esc_html(rb_format_phone($contacts['phone'] ?? '')) ?></a>
         <span class="address"><?= esc_html($contacts['address'] ?? '') ?></span>
     </div>
     <nav class="header-actions" aria-label="Быстрые действия">
-        <a class="icon-btn" href="<?= esc_url(route_url('cart')) ?>" aria-label="Корзина" title="Корзина">
-            <img src="<?= esc_url(rb_asset_url('img/shopping-cart.svg')) ?>" alt="">
-            <?php if (function_exists('rb_cart_count') && rb_cart_count() > 0): ?>
-                <span class="cart-count"><?= esc_html((string) rb_cart_count()) ?></span>
-            <?php endif; ?>
-        </a>
+        <div class="header-cart" data-header-cart>
+            <a class="icon-btn" href="<?= esc_url(route_url('cart')) ?>" aria-label="Корзина" title="Корзина" aria-haspopup="true">
+                <img src="<?= esc_url(rb_asset_url('img/shopping-cart.svg')) ?>" alt="">
+                <span class="header-cart__count" data-header-cart-count<?= $rb_header_cart['count'] > 0 ? '' : ' hidden' ?>><?= esc_html((string) $rb_header_cart['count']) ?></span>
+            </a>
+            <section class="mini-cart" data-mini-cart aria-label="Состав корзины">
+                <div class="mini-cart__head"><strong>Корзина</strong><span data-mini-cart-count><?= esc_html((string) $rb_header_cart['count']) ?> шт.</span></div>
+                <div class="mini-cart__items" data-mini-cart-items>
+                    <?php if ($rb_header_cart['items']): ?>
+                        <?php foreach ($rb_header_cart['items'] as $item): ?>
+                            <a class="mini-cart__item" href="<?= esc_url($item['url']) ?>">
+                                <img src="<?= esc_url($item['image']) ?>" alt="">
+                                <span><strong><?= esc_html($item['title']) ?></strong><small><?= esc_html($item['details']) ?> · <?= esc_html((string) $item['quantity']) ?> шт.</small></span>
+                                <b><?= esc_html($item['line_total_formatted']) ?></b>
+                            </a>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <p class="mini-cart__empty" data-mini-cart-empty>Корзина пока пуста</p>
+                    <?php endif; ?>
+                </div>
+                <div class="mini-cart__footer">
+                    <span>Итого <strong data-mini-cart-total><?= esc_html($rb_header_cart['total_formatted']) ?></strong></span>
+                    <a class="button button--small" href="<?= esc_url(route_url('cart')) ?>">В корзину</a>
+                </div>
+            </section>
+        </div>
         <?php if (is_user_logged_in()): ?>
             <a class="icon-btn" href="<?= esc_url(route_url('account')) ?>" aria-label="Личный кабинет" title="Личный кабинет">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -93,7 +116,7 @@ $rb_header_menu_items = function_exists('rb_menu') ? rb_menu() : [];
                     <path d="m6 6 12 12"/>
                 </svg>
             </button>
-            <span class="eyebrow">RB Roasters</span>
+            <span class="eyebrow">Roastberry Coffee Roasters</span>
             <h2 id="auth-modal-title">Выберите кабинет</h2>
             <p>Зарегистрируйтесь как розничный покупатель или юридическое лицо.</p>
             <div class="auth-modal__choices">

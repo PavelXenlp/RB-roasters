@@ -24,6 +24,12 @@ if (!function_exists('route_url')) {
             'account' => '/account/',
             'business' => '/business/',
             'business-account' => '/business-account/',
+            'privacy' => '/privacy/',
+            'personal-data-consent' => '/personal-data-consent/',
+            'requisites' => '/requisites/',
+            'public-offer' => '/public-offer/',
+            'user-agreement' => '/user-agreement/',
+            'returns' => '/returns/',
         ];
 
         $path = $routes[$page] ?? '/';
@@ -132,7 +138,7 @@ $products = [
         'process' => 'Ассорти',
         'roast' => 'Разная',
         'country' => 'Смесь лотов',
-        'region' => 'RB Roasters',
+        'region' => 'Roastberry Coffee Roasters',
         'height' => 'разная',
         'variety' => 'разные',
         'image' => $asset('img/__3.png'),

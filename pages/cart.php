@@ -14,8 +14,9 @@
             ], 'СДЭК за счет получателя', 'Способ доставки'); ?>
         </label>
         <label>ФИО<input type="text" placeholder="Иван Иванов"></label>
-        <label>Телефон<input type="tel" inputmode="tel" placeholder="+7 (___) ___-__-__"></label>
+        <label>Телефон<input type="tel" inputmode="tel" autocomplete="tel" maxlength="18" data-phone-mask pattern="<?= esc_attr(rb_phone_input_pattern()) ?>" title="<?= esc_attr(rb_phone_input_title()) ?>" placeholder="+7 (___) ___-__-__" required></label>
         <label>Почта<input type="email" placeholder="mail@example.com"></label>
         <label>Промокод<input type="text"></label>
+        <?php rb_render_legal_consents(true); ?>
     </form>
 </section>

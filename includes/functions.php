@@ -19,7 +19,7 @@ function product_card(array $product): void
         </a>
         <div class="product-card__body">
             <a href="<?= route_url('product') ?>" class="product-card__title"><?= htmlspecialchars($product['title']) ?></a>
-            <p><?= htmlspecialchars($product['description']) ?></p>
+            <p><strong>Во вкусе:</strong> <?= htmlspecialchars($product['description']) ?></p>
             <span><?= htmlspecialchars($product['process']) ?> способ обработки</span>
             <div class="price-row">
                 <del><?= htmlspecialchars($product['old_200']) ?></del>
@@ -38,6 +38,10 @@ function rb_product_card_from_post(int $post_id): void
     $image = get_the_post_thumbnail_url($post_id, 'medium_large') ?: rb_asset_url('img/1.webp');
     $descriptors = $meta['rb_descriptors'] ?? get_the_excerpt($post_id);
     $process = $meta['rb_process'] ?? '';
+    $base_price = function_exists('rb_product_price_by_size') ? rb_product_price_by_size($post_id, '200') : 0;
+    $loyalty = function_exists('rb_user_loyalty_data') ? rb_user_loyalty_data(get_current_user_id()) : ['percent' => 0];
+    $personal_price = $base_price > 0 ? (int) round($base_price * (100 - (int) $loyalty['percent']) / 100) : 0;
+    $old_price = function_exists('rb_parse_price') ? rb_parse_price((string) ($meta['rb_old_price_200'] ?? '')) : 0;
     ?>
     <article class="product-card">
         <a href="<?= esc_url(get_permalink($post_id)) ?>" class="product-card__image">
@@ -45,16 +49,116 @@ function rb_product_card_from_post(int $post_id): void
         </a>
         <div class="product-card__body">
             <a href="<?= esc_url(get_permalink($post_id)) ?>" class="product-card__title"><?= esc_html(get_the_title($post_id)) ?></a>
-            <p><?= esc_html($descriptors) ?></p>
+            <p><strong>Во вкусе:</strong> <?= esc_html($descriptors) ?></p>
             <?php if ($process): ?><span><?= esc_html($process) ?> способ обработки</span><?php endif; ?>
             <div class="price-row">
-                <?php if (!empty($meta['rb_old_price_200'])): ?><del><?= esc_html($meta['rb_old_price_200']) ?></del><?php endif; ?>
-                <?php if (!empty($meta['rb_price_200'])): ?><strong><?= esc_html($meta['rb_price_200']) ?></strong><?php endif; ?>
+                <?php if ($old_price > $base_price): ?><del><?= esc_html(rb_format_price($old_price)) ?></del><?php elseif ($personal_price > 0 && $personal_price < $base_price): ?><del><?= esc_html(rb_format_price($base_price)) ?></del><?php endif; ?>
+                <?php if ($personal_price > 0): ?><strong><?= esc_html(rb_format_price($personal_price)) ?></strong><?php endif; ?>
                 <small>за 200 г</small>
             </div>
             <a class="button button--small" href="<?= esc_url(get_permalink($post_id)) ?>">Подробнее</a>
         </div>
     </article>
+    <?php
+}
+
+function rb_catalog_breadcrumbs(?WP_Term $term = null, ?WP_Post $product = null): void
+{
+    $items = [
+        ['name' => 'Главная', 'url' => home_url('/')],
+        ['name' => 'Каталог', 'url' => route_url('catalog')],
+    ];
+
+    if ($term) {
+        $ancestor_ids = array_reverse(get_ancestors($term->term_id, 'rb_product_category', 'taxonomy'));
+        foreach ($ancestor_ids as $ancestor_id) {
+            $ancestor = get_term($ancestor_id, 'rb_product_category');
+            if ($ancestor instanceof WP_Term) {
+                $ancestor_url = get_term_link($ancestor);
+                $items[] = [
+                    'name' => $ancestor->name,
+                    'url' => is_wp_error($ancestor_url) ? '' : $ancestor_url,
+                ];
+            }
+        }
+
+        $term_url = get_term_link($term);
+        $items[] = [
+            'name' => $term->name,
+            'url' => $product && !is_wp_error($term_url) ? $term_url : '',
+        ];
+    }
+
+    if ($product) {
+        $items[] = ['name' => get_the_title($product), 'url' => ''];
+    }
+    ?>
+    <nav class="catalog-breadcrumbs" aria-label="Хлебные крошки" itemscope itemtype="https://schema.org/BreadcrumbList">
+        <ol>
+            <?php foreach ($items as $index => $item): ?>
+                <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                    <?php if ($item['url'] !== '' && $index < count($items) - 1): ?>
+                        <a itemprop="item" href="<?= esc_url($item['url']) ?>"><span itemprop="name"><?= esc_html($item['name']) ?></span></a>
+                    <?php else: ?>
+                        <span itemprop="name" aria-current="page"><?= esc_html($item['name']) ?></span>
+                    <?php endif; ?>
+                    <meta itemprop="position" content="<?= esc_attr($index + 1) ?>">
+                </li>
+            <?php endforeach; ?>
+        </ol>
+    </nav>
+    <?php
+}
+
+function rb_catalog_category_tabs(array $terms, int $active_term_id = 0): void
+{
+    ?>
+    <nav class="category-row" aria-label="Категории каталога">
+        <a class="<?= $active_term_id === 0 ? 'is-active' : '' ?>" href="<?= esc_url(route_url('catalog')) ?>"<?= $active_term_id === 0 ? ' aria-current="page"' : '' ?>>Все товары</a>
+        <?php foreach ($terms as $term): ?>
+            <?php
+            if (!$term instanceof WP_Term) {
+                continue;
+            }
+            $term_url = get_term_link($term);
+            if (is_wp_error($term_url)) {
+                continue;
+            }
+            $is_active = $active_term_id === $term->term_id;
+            ?>
+            <a class="<?= $is_active ? 'is-active' : '' ?>" href="<?= esc_url($term_url) ?>"<?= $is_active ? ' aria-current="page"' : '' ?>><?= esc_html($term->name) ?></a>
+        <?php endforeach; ?>
+    </nav>
+    <?php
+}
+
+function rb_catalog_search(string $search_query = ''): void
+{
+    ?>
+    <form class="catalog-search" action="<?= esc_url(route_url('catalog')) ?>" method="get" role="search" data-catalog-search data-search-endpoint="<?= esc_url(rest_url('rb/v1/product-search')) ?>">
+        <div class="catalog-search__field">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+            <input type="search" name="catalog_search" value="<?= esc_attr($search_query) ?>" placeholder="Найти кофе, дрип-пакеты или аксессуары" autocomplete="off" aria-label="Поиск по каталогу" aria-controls="catalog-search-popover" aria-expanded="false" data-catalog-search-input>
+            <button class="catalog-search__reset" type="button" aria-label="Очистить поиск" title="Очистить" data-catalog-search-reset<?= $search_query === '' ? ' hidden' : '' ?>>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+            </button>
+            <button class="catalog-search__submit" type="submit">Найти</button>
+        </div>
+        <div class="catalog-search__popover" id="catalog-search-popover" data-catalog-search-popover hidden>
+            <div class="catalog-search__recent" data-catalog-search-recent hidden>
+                <div class="catalog-search__popover-head">
+                    <strong>Недавние запросы</strong>
+                    <button type="button" data-catalog-search-clear-history>Очистить</button>
+                </div>
+                <div data-catalog-search-recent-list></div>
+            </div>
+            <div class="catalog-search__suggestions" data-catalog-search-suggestions hidden>
+                <strong>Подсказки</strong>
+                <div data-catalog-search-suggestion-list></div>
+            </div>
+            <p class="catalog-search__status" data-catalog-search-status aria-live="polite"></p>
+        </div>
+    </form>
     <?php
 }
 
@@ -95,7 +199,7 @@ function rb_training_card_from_post(int $post_id): void
             <?php else: ?>
                 <p><?= esc_html(get_the_excerpt($post_id)) ?></p>
             <?php endif; ?>
-            <a class="button button--small" href="<?= esc_url($link) ?>">Узнать подробности</a>
+            <a class="button button--small" href="<?= esc_url($link) ?>" target="_blank" rel="noopener noreferrer">Узнать подробности</a>
         </div>
     </article>
     <?php

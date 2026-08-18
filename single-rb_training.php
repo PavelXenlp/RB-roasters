@@ -22,7 +22,7 @@ while (have_posts()): the_post();
             <h1><?= esc_html(get_the_title()) ?></h1>
             <?php if ($duration || $price): ?><p class="lead"><?= esc_html(trim($duration . ' / ' . $price, ' /')) ?></p><?php endif; ?>
             <div class="copy-block"><?php the_content(); ?></div>
-            <a class="button" href="<?= esc_url($link) ?>">Узнать подробности</a>
+            <a class="button" href="<?= esc_url($link) ?>" target="_blank" rel="noopener noreferrer">Узнать подробности</a>
         </div>
     </section>
 <?php endwhile; ?>

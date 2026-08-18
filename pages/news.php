@@ -1,6 +1,6 @@
 <section class="page-head">
     <span>Новости и акции</span>
-    <h1>Жизнь обжарки</h1>
+    <h1>ЖИЗНЬ ROASTBERRY COFFEE ROASTERS</h1>
 </section>
 <section class="section">
     <div class="news-grid news-grid--full">

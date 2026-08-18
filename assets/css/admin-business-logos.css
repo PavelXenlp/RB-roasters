@@ -1,0 +1,41 @@
+.rb-business-logos__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.rb-business-logos__item {
+    position: relative;
+    display: grid;
+    min-height: 100px;
+    place-items: center;
+    padding: 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    background: #fff;
+}
+
+.rb-business-logos__item img {
+    width: 100%;
+    height: 76px;
+    object-fit: contain;
+}
+
+.rb-business-logos__item button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: grid;
+    width: 26px;
+    height: 26px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid #d63638;
+    border-radius: 50%;
+    color: #d63638;
+    background: #fff;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}

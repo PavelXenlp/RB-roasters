@@ -1,0 +1,41 @@
+.rb-product-recommendations-admin {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    max-height: 420px;
+    gap: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    border: 1px solid #dcdcde;
+    background: #f6f7f7;
+}
+
+.rb-product-recommendations-admin label {
+    display: grid;
+    grid-template-columns: 20px 48px minmax(0, 1fr);
+    min-width: 0;
+    align-items: center;
+    gap: 9px;
+    padding: 8px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.rb-product-recommendations-admin label:has(input:checked) {
+    border-color: #8aa319;
+    box-shadow: 0 0 0 1px #8aa319;
+}
+
+.rb-product-recommendations-admin img {
+    width: 48px;
+    height: 48px;
+    border-radius: 3px;
+    object-fit: cover;
+}
+
+.rb-product-recommendations-admin span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-weight: 600;
+}

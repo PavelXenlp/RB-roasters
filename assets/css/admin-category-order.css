@@ -1,0 +1,44 @@
+.column-rb_category_order {
+    width: 42px;
+    text-align: center;
+}
+
+.rb-category-drag {
+    display: inline-grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    color: #646970;
+    background: transparent;
+    cursor: grab;
+}
+
+.rb-category-drag:active {
+    cursor: grabbing;
+}
+
+.rb-category-drag:focus-visible {
+    outline: 2px solid #2271b1;
+    outline-offset: 1px;
+}
+
+.rb-category-order-placeholder td {
+    height: 54px;
+    border: 2px dashed #8aa319;
+    background: #f4f7e7;
+}
+
+.rb-category-order-status {
+    margin: 8px 0 12px;
+    color: #646970;
+}
+
+.rb-category-order-status.is-success {
+    color: #467500;
+}
+
+.rb-category-order-status.is-error {
+    color: #b32d2e;
+}
