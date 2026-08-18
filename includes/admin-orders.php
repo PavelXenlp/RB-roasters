@@ -16,8 +16,17 @@ add_action('admin_enqueue_scripts', 'rb_enqueue_order_admin_assets');
 function rb_enqueue_order_admin_assets(): void
 {
     $page = isset($_GET['page']) ? sanitize_key(wp_unslash($_GET['page'])) : '';
-    if (!in_array($page, ['rb-orders', 'rb-price-requests'], true)) return;
+    $screen = get_current_screen();
+    $is_order_editor = $screen && $screen->base === 'post' && $screen->post_type === 'rb_order';
+    if (!in_array($page, ['rb-orders', 'rb-price-requests'], true) && !$is_order_editor) return;
     wp_enqueue_style('rb-orders-admin', rb_asset_url('css/admin-orders.css'), [], rb_asset_version('css/admin-orders.css'));
+}
+
+add_action('add_meta_boxes_rb_order', 'rb_remove_legacy_order_boxes', 30);
+function rb_remove_legacy_order_boxes(): void
+{
+    remove_meta_box('authordiv', 'rb_order', 'normal');
+    remove_meta_box('slugdiv', 'rb_order', 'normal');
 }
 
 function rb_order_admin_filters(): array

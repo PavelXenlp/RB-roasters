@@ -173,6 +173,20 @@ function rb_record_order_legal_acceptance(int $order_id, string $context): void
     if ($order_id > 0) update_post_meta($order_id, 'rb_legal_acceptance', rb_legal_acceptance_data($context));
 }
 
+function rb_cookie_deferred_embed(string $iframe, string $title = 'Внешний сервис'): string
+{
+    if (!class_exists('WP_HTML_Tag_Processor')) return $iframe;
+    $processor = new WP_HTML_Tag_Processor($iframe);
+    if (!$processor->next_tag('iframe')) return $iframe;
+    $src = (string) $processor->get_attribute('src');
+    if ($src === '') return $iframe;
+    $processor->set_attribute('data-cookie-embed', 'true');
+    $processor->set_attribute('data-src', $src);
+    $processor->remove_attribute('src');
+
+    return '<div class="cookie-embed" data-cookie-embed-wrap><div class="cookie-embed__placeholder" data-cookie-embed-placeholder><strong>' . esc_html($title) . '</strong><p>Сервис загрузится после согласия на дополнительные cookie.</p><button class="button button--small" type="button" data-cookie-embed-load>Показать</button></div>' . $processor->get_updated_html() . '</div>';
+}
+
 function rb_legal_header(string $eyebrow, string $title, string $intro = ''): void
 {
     echo '<section class="legal-hero"><div><span class="eyebrow">' . esc_html($eyebrow) . '</span><h1>' . esc_html($title) . '</h1>';
@@ -214,7 +228,7 @@ function rb_render_legal_page(string $type): void
             <h2>4. Получатели и обработчики</h2><p>В необходимом объеме данные могут передаваться хостинг- и почтовому провайдеру, YooKassa для платежа, СДЭК для доставки, оператору фискальных данных, банкам и государственным органам в установленных законом случаях. Карты Яндекса получают технические данные при загрузке виджета. Данные не продаются.</p>
             <h2>5. Хранение и безопасность</h2><p>Первичная запись и хранение данных граждан РФ выполняются в базах данных на территории России. Срок зависит от цели: данные кабинета хранятся до его удаления, сведения о заказах и расчетах — в сроки обязательного учета и исковой давности, доказательства согласий — до окончания цели и применимых сроков защиты прав. Оператор применяет разграничение доступа, резервное копирование, обновления, защищенное соединение и журналирование действий.</p>
             <h2>6. Права пользователя</h2><p>Можно запросить сведения об обработке, уточнение, блокирование или удаление данных, отозвать согласие и возразить против обработки. Обращение направляется на <?= $email ?> с указанием ФИО, контакта и сути требования. Оператор вправе запросить сведения для подтверждения личности.</p>
-            <h2>7. Cookie и изменения</h2><p>Необходимые cookie обеспечивают корзину, авторизацию и безопасность. Аналитические cookie могут применяться только при наличии правового основания. Новая редакция политики действует с момента публикации; дата редакции указана в начале страницы.</p>
+            <h2 id="cookies">7. Cookie и изменения</h2><p>Необходимые cookie обеспечивают корзину, авторизацию и безопасность и не могут быть отключены средствами сайта. Аналитические и иные необязательные cookie могут применяться только после выбора пользователя. Изменить выбор можно, удалив cookie <code>rb_cookie_consent</code> в настройках браузера. Новая редакция политики действует с момента публикации; дата редакции указана в начале страницы.</p>
         </section><?php return;
     }
     if ($type === 'personal-data-consent') {

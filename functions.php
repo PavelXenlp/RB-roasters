@@ -5,6 +5,8 @@
  * @package ROASTBERRY_THEME
  */
 
+require_once __DIR__ . '/includes/image-optimizer.php';
+require_once __DIR__ . '/includes/translate-slug.php';
 require_once __DIR__ . '/includes/data.php';
 require_once __DIR__ . '/includes/functions.php';
 require_once __DIR__ . '/includes/legal.php';
@@ -46,6 +48,7 @@ function rb_enqueue_assets(): void
 
     wp_enqueue_script('rb-phone-mask', rb_asset_url('js/phone-mask.js'), [], rb_asset_version('js/phone-mask.js'), true);
     wp_enqueue_script('rb-main', rb_asset_url('js/main.js'), [], rb_asset_version('js/main.js'), true);
+    wp_enqueue_script('rb-cookie-consent', rb_asset_url('js/cookie-consent.js'), [], rb_asset_version('js/cookie-consent.js'), true);
 }
 
 function rb_asset_url(string $path): string
@@ -590,7 +593,8 @@ function rb_get_contacts_map_iframe(int $post_id): string
 {
     $iframe = (string) get_post_meta($post_id, 'rb_contacts_map_iframe', true);
 
-    return rb_sanitize_contacts_map_iframe($iframe !== '' ? $iframe : rb_contacts_default_map_iframe());
+    $iframe = rb_sanitize_contacts_map_iframe($iframe !== '' ? $iframe : rb_contacts_default_map_iframe());
+    return rb_cookie_deferred_embed($iframe, 'Карта Roastberry Coffee Roasters');
 }
 
 function rb_render_contacts_map_meta_box(WP_Post $post): void
@@ -846,43 +850,97 @@ function rb_order_meta_fields(): array
 function rb_render_order_meta_box(WP_Post $post): void
 {
     wp_nonce_field('rb_save_order_meta', 'rb_order_meta_nonce');
+    $meta = [];
+    foreach (array_keys(rb_order_meta_fields()) as $key) $meta[$key] = get_post_meta($post->ID, $key, true);
+    $order_type = (string) ($meta['rb_order_type'] ?: 'retail');
+    $is_lead = $order_type === 'business_lead';
+    $back_url = admin_url('admin.php?page=' . ($is_lead ? 'rb-price-requests' : 'rb-orders'));
+    $status = (string) ($meta['rb_order_status'] ?: 'new');
+    ?>
+    <div class="rb-order-editor<?= $is_lead ? ' rb-order-editor--lead' : '' ?>">
+        <header class="rb-order-editor__head">
+            <div>
+                <a class="rb-order-editor__back" href="<?= esc_url($back_url) ?>"><span class="dashicons dashicons-arrow-left-alt2"></span><?= $is_lead ? 'Все заявки на прайс' : 'Все заказы' ?></a>
+                <span class="rb-orders-kicker"><?= $is_lead ? 'Оптовая заявка' : esc_html(rb_order_admin_type_label($order_type)) . ' заказ' ?></span>
+                <h2><?= $is_lead ? 'Заявка на прайс-лист' : 'Заказ' ?> #<?= esc_html((string) $post->ID) ?></h2>
+                <p>Создан <?= esc_html(get_the_date('d.m.Y', $post)) ?> в <?= esc_html(get_the_time('H:i', $post)) ?></p>
+            </div>
+            <div class="rb-order-editor__state"><?= rb_order_admin_badge($status) ?><span><?= esc_html((string) ($meta['rb_order_total'] ?: ($is_lead ? 'Запрос прайса' : 'Сумма не рассчитана'))) ?></span></div>
+        </header>
 
-    foreach (rb_order_meta_fields() as $key => $label) {
-        $value = get_post_meta($post->ID, $key, true);
-        echo '<p><label for="' . esc_attr($key) . '"><strong>' . esc_html($label) . '</strong></label>';
+        <?php if ($is_lead): ?>
+            <div class="rb-lead-layout">
+                <section class="rb-editor-panel rb-lead-contact">
+                    <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-businessperson"></span><h3>Контактное лицо</h3></div><p>Данные для первого контакта и отправки предложения.</p></div>
+                    <div class="rb-editor-fields rb-editor-fields--two">
+                        <label><span>ФИО</span><input name="rb_customer_name" value="<?= esc_attr((string) $meta['rb_customer_name']) ?>"></label>
+                        <label><span>Компания</span><input name="rb_company_name" value="<?= esc_attr((string) $meta['rb_company_name']) ?>" placeholder="Не указана"></label>
+                        <label><span>Телефон</span><input name="rb_customer_phone" type="tel" inputmode="tel" maxlength="18" data-phone-mask value="<?= esc_attr(rb_format_phone((string) $meta['rb_customer_phone'])) ?>"></label>
+                        <label><span>Электронная почта</span><input name="rb_customer_email" type="email" value="<?= esc_attr((string) $meta['rb_customer_email']) ?>"></label>
+                    </div>
+                    <div class="rb-lead-actions">
+                        <?php if ($meta['rb_customer_phone']): ?><a class="button button-primary" href="tel:<?= esc_attr(rb_phone_href((string) $meta['rb_customer_phone'])) ?>"><span class="dashicons dashicons-phone"></span>Позвонить</a><?php endif; ?>
+                        <?php if ($meta['rb_customer_email']): ?><a class="button" href="mailto:<?= esc_attr((string) $meta['rb_customer_email']) ?>?subject=Прайс-лист Roastberry Coffee Roasters"><span class="dashicons dashicons-email"></span>Написать</a><?php endif; ?>
+                    </div>
+                </section>
+                <aside class="rb-editor-panel rb-lead-status">
+                    <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-flag"></span><h3>Обработка заявки</h3></div></div>
+                    <label class="rb-editor-field"><span>Статус</span><select name="rb_order_status"><?php foreach (rb_order_statuses() as $key => $label): ?><option value="<?= esc_attr($key) ?>" <?= selected($status, $key, false) ?>><?= esc_html($label) ?></option><?php endforeach; ?></select></label>
+                    <div class="rb-lead-facts"><div><span>Источник</span><strong>Форма «Запросить прайс»</strong></div><div><span>Дата заявки</span><strong><?= esc_html(get_the_date('d.m.Y H:i', $post)) ?></strong></div></div>
+                    <input type="hidden" name="rb_order_type" value="business_lead"><input type="hidden" name="rb_order_total" value="<?= esc_attr((string) $meta['rb_order_total']) ?>">
+                </aside>
+            </div>
+        <?php else: ?>
+            <div class="rb-order-editor__layout">
+                <main>
+                    <section class="rb-editor-panel">
+                        <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-cart"></span><h3>Состав заказа</h3></div><p><?= count(rb_get_order_items($post->ID)) ?> позиций</p></div>
+                        <?php $items = rb_get_order_items($post->ID); ?>
+                        <?php if ($items): ?>
+                            <div class="rb-order-items-table"><table><thead><tr><th>Товар</th><th>Вариант</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead><tbody><?php foreach ($items as $item): $product_id = absint($item['product_id'] ?? 0); ?><tr><td><div class="rb-order-product"><?= $product_id ? get_the_post_thumbnail($product_id, 'thumbnail') : '' ?><div><strong><?= esc_html((string) ($item['title'] ?? 'Товар')) ?></strong><small><?= esc_html((string) ($item['sku'] ?? '')) ?></small></div></div></td><td><?= esc_html(trim((string) ($item['size_label'] ?? '') . ', ' . (string) ($item['grind'] ?? ''), ', ')) ?></td><td><?= esc_html((string) ($item['quantity'] ?? 0)) ?></td><td><?= esc_html(rb_format_price((int) ($item['unit_price'] ?? 0))) ?></td><td><strong><?= esc_html(rb_format_price((int) ($item['line_total'] ?? 0))) ?></strong></td></tr><?php endforeach; ?></tbody></table></div>
+                        <?php else: ?><p class="rb-editor-empty">В заказе нет структурированных товарных позиций.</p><?php endif; ?>
+                        <input type="hidden" name="rb_order_items" value="<?= esc_attr((string) $meta['rb_order_items']) ?>">
+                    </section>
 
-        if ($key === 'rb_order_items') {
-            $structured_items = rb_get_order_items($post->ID);
-            if ($structured_items) {
-                echo '<table class="widefat striped"><thead><tr><th>Товар</th><th>SKU</th><th>Вариант</th><th>Кол-во</th><th>Цена</th><th>Сумма</th></tr></thead><tbody>';
-                foreach ($structured_items as $item) {
-                    echo '<tr><td>' . esc_html($item['title'] ?? '') . '</td><td>' . esc_html($item['sku'] ?? '') . '</td><td>' . esc_html(trim(($item['size_label'] ?? '') . ', ' . ($item['grind'] ?? ''), ', ')) . '</td><td>' . esc_html((string) ($item['quantity'] ?? 0)) . '</td><td>' . esc_html(rb_format_price((int) ($item['unit_price'] ?? 0))) . '</td><td>' . esc_html(rb_format_price((int) ($item['line_total'] ?? 0))) . '</td></tr>';
-                }
-                echo '</tbody></table>';
-                echo '<input type="hidden" name="rb_order_items" value="' . esc_attr((string) $value) . '">';
-            } else {
-                echo '<textarea class="widefat" rows="6" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '">' . esc_textarea($value) . '</textarea>';
-            }
-        } elseif ($key === 'rb_order_status') {
-            echo '<select class="widefat" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '">';
-            foreach (rb_order_statuses() as $status => $status_label) {
-                echo '<option value="' . esc_attr($status) . '"' . selected((string) $value, $status, false) . '>' . esc_html($status_label) . '</option>';
-            }
-            echo '</select>';
-        } elseif ($key === 'rb_payment_status') {
-            echo '<select class="widefat" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '">';
-            foreach (rb_payment_statuses() as $status => $status_label) {
-                echo '<option value="' . esc_attr($status) . '"' . selected((string) $value, $status, false) . '>' . esc_html($status_label) . '</option>';
-            }
-            echo '</select>';
-        } elseif ($key === 'rb_customer_phone') {
-            echo '<input class="widefat" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '" type="tel" inputmode="tel" autocomplete="tel" maxlength="18" data-phone-mask pattern="' . esc_attr(rb_phone_input_pattern()) . '" title="' . esc_attr(rb_phone_input_title()) . '" value="' . esc_attr(rb_format_phone((string) $value)) . '">';
-        } else {
-            echo '<input class="widefat" id="' . esc_attr($key) . '" name="' . esc_attr($key) . '" value="' . esc_attr($value) . '">';
-        }
+                    <section class="rb-editor-panel">
+                        <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-admin-users"></span><h3>Покупатель</h3></div></div>
+                        <div class="rb-editor-fields rb-editor-fields--three">
+                            <label><span>ФИО</span><input name="rb_customer_name" value="<?= esc_attr((string) $meta['rb_customer_name']) ?>"></label>
+                            <label><span>Телефон</span><input name="rb_customer_phone" type="tel" inputmode="tel" maxlength="18" data-phone-mask value="<?= esc_attr(rb_format_phone((string) $meta['rb_customer_phone'])) ?>"></label>
+                            <label><span>Электронная почта</span><input name="rb_customer_email" type="email" value="<?= esc_attr((string) $meta['rb_customer_email']) ?>"></label>
+                        </div>
+                        <?php if ($order_type === 'business'): ?><div class="rb-editor-fields rb-editor-fields--three rb-company-fields"><label><span>Компания</span><input name="rb_company_name" value="<?= esc_attr((string) $meta['rb_company_name']) ?>"></label><label><span>ИНН</span><input name="rb_company_inn" value="<?= esc_attr((string) $meta['rb_company_inn']) ?>"></label><label><span>КПП</span><input name="rb_company_kpp" value="<?= esc_attr((string) $meta['rb_company_kpp']) ?>"></label><label class="rb-field-wide"><span>Юридический адрес</span><input name="rb_company_address" value="<?= esc_attr((string) $meta['rb_company_address']) ?>"></label></div><?php endif; ?>
+                    </section>
 
-        echo '</p>';
-    }
+                    <section class="rb-editor-panel">
+                        <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-location-alt"></span><h3>Доставка</h3></div></div>
+                        <div class="rb-editor-fields rb-editor-fields--two"><label><span>Способ доставки</span><input name="rb_delivery_method" value="<?= esc_attr((string) $meta['rb_delivery_method']) ?>"></label><label><span>Адрес или пункт выдачи</span><input name="rb_pickup_point" value="<?= esc_attr((string) $meta['rb_pickup_point']) ?>"></label></div>
+                        <?php if ($meta['rb_cdek_office_code']): ?><details class="rb-cdek-details"><summary>Данные отправления СДЭК</summary><div class="rb-editor-fields rb-editor-fields--three"><label><span>Код ПВЗ</span><input name="rb_cdek_office_code" value="<?= esc_attr((string) $meta['rb_cdek_office_code']) ?>"></label><label><span>Код города</span><input name="rb_cdek_city_code" value="<?= esc_attr((string) $meta['rb_cdek_city_code']) ?>"></label><label><span>Тариф</span><input name="rb_cdek_tariff_name" value="<?= esc_attr((string) $meta['rb_cdek_tariff_name']) ?>"></label><label><span>Код тарифа</span><input name="rb_cdek_tariff_code" value="<?= esc_attr((string) $meta['rb_cdek_tariff_code']) ?>"></label><label><span>Срок</span><input name="rb_cdek_delivery_period" value="<?= esc_attr((string) $meta['rb_cdek_delivery_period']) ?>"></label></div></details><?php endif; ?>
+                    </section>
+                </main>
+
+                <aside>
+                    <section class="rb-editor-panel rb-order-control">
+                        <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-controls-repeat"></span><h3>Статус</h3></div></div>
+                        <label class="rb-editor-field"><span>Выполнение</span><select name="rb_order_status"><?php foreach (rb_order_statuses() as $key => $label): ?><option value="<?= esc_attr($key) ?>" <?= selected($status, $key, false) ?>><?= esc_html($label) ?></option><?php endforeach; ?></select></label>
+                        <label class="rb-editor-field"><span>Оплата</span><select name="rb_payment_status"><?php foreach (rb_payment_statuses() as $key => $label): ?><option value="<?= esc_attr($key) ?>" <?= selected((string) $meta['rb_payment_status'], $key, false) ?>><?= esc_html($label) ?></option><?php endforeach; ?></select></label>
+                        <label class="rb-editor-field"><span>Способ оплаты</span><input name="rb_payment_method" value="<?= esc_attr((string) $meta['rb_payment_method']) ?>"></label>
+                        <input type="hidden" name="rb_order_type" value="<?= esc_attr($order_type) ?>"><input type="hidden" name="rb_payment_id" value="<?= esc_attr((string) $meta['rb_payment_id']) ?>">
+                    </section>
+                    <section class="rb-editor-panel rb-order-summary">
+                        <div class="rb-editor-panel__title"><div><span class="dashicons dashicons-money-alt"></span><h3>Итог</h3></div></div>
+                        <label><span>Товары</span><input type="number" name="rb_order_subtotal_amount" value="<?= esc_attr((string) $meta['rb_order_subtotal_amount']) ?>"><b>₽</b></label>
+                        <label><span>Скидка</span><input type="number" name="rb_discount_total_amount" value="<?= esc_attr((string) $meta['rb_discount_total_amount']) ?>"><b>₽</b></label>
+                        <label><span>Доставка</span><input type="number" name="rb_delivery_cost_amount" value="<?= esc_attr((string) $meta['rb_delivery_cost_amount']) ?>"><b>₽</b></label>
+                        <div class="rb-order-summary__total"><span>Итого</span><strong><?= esc_html((string) $meta['rb_order_total']) ?></strong></div>
+                        <input type="hidden" name="rb_order_total_amount" value="<?= esc_attr((string) $meta['rb_order_total_amount']) ?>"><input type="hidden" name="rb_order_total" value="<?= esc_attr((string) $meta['rb_order_total']) ?>"><input type="hidden" name="rb_delivery_cost" value="<?= esc_attr((string) $meta['rb_delivery_cost']) ?>"><input type="hidden" name="rb_promocode" value="<?= esc_attr((string) $meta['rb_promocode']) ?>">
+                    </section>
+                    <?php $acceptance = get_post_meta($post->ID, 'rb_legal_acceptance', true); if (is_array($acceptance) && $acceptance): ?><section class="rb-editor-panel rb-order-legal"><span class="dashicons dashicons-shield"></span><div><strong>Согласия зафиксированы</strong><p><?= esc_html((string) ($acceptance['accepted_at_utc'] ?? '')) ?><br>Версия <?= esc_html((string) ($acceptance['document_version'] ?? '')) ?></p></div></section><?php endif; ?>
+                </aside>
+            </div>
+        <?php endif; ?>
+    </div>
+    <?php
 }
 
 function rb_training_meta_fields(): array
@@ -1039,6 +1097,9 @@ function rb_save_order_meta(int $post_id): void
 
     $previous_status = (string) get_post_meta($post_id, 'rb_order_status', true);
     foreach (rb_order_meta_fields() as $key => $label) {
+        if (!isset($_POST[$key])) {
+            continue;
+        }
         $value = isset($_POST[$key]) ? sanitize_textarea_field(wp_unslash($_POST[$key])) : '';
         if ($key === 'rb_order_status' && !array_key_exists($value, rb_order_statuses())) {
             continue;
@@ -1053,6 +1114,19 @@ function rb_save_order_meta(int $post_id): void
             $value = rb_format_phone($value);
         }
         update_post_meta($post_id, $key, $value);
+    }
+
+    if (isset($_POST['rb_order_subtotal_amount'], $_POST['rb_discount_total_amount'], $_POST['rb_delivery_cost_amount'])) {
+        $subtotal = max(0, (int) $_POST['rb_order_subtotal_amount']);
+        $discount = max(0, (int) $_POST['rb_discount_total_amount']);
+        $delivery = max(0, (int) $_POST['rb_delivery_cost_amount']);
+        $total = max(0, $subtotal - $discount + $delivery);
+        update_post_meta($post_id, 'rb_order_subtotal_amount', $subtotal);
+        update_post_meta($post_id, 'rb_discount_total_amount', $discount);
+        update_post_meta($post_id, 'rb_delivery_cost_amount', $delivery);
+        update_post_meta($post_id, 'rb_delivery_cost', rb_format_price($delivery));
+        update_post_meta($post_id, 'rb_order_total_amount', $total);
+        update_post_meta($post_id, 'rb_order_total', rb_format_price($total));
     }
 
     $current_status = (string) get_post_meta($post_id, 'rb_order_status', true);
